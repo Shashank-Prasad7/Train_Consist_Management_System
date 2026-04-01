@@ -1,65 +1,44 @@
-import java.util.LinkedList;
+import java.util.LinkedHashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 public class TrainConsistManagementApp {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        LinkedList<String> trainConsist = new LinkedList<>();
+        // LinkedHashSet: Ensures uniqueness AND maintains insertion order
+        Set<String> trainFormation = new LinkedHashSet<>();
 
-        System.out.println("=== UC4: Advanced Train Consist Management (User-Defined) ===");
-        boolean running = true;
+        System.out.println("=== UC5: Ordered Unique Train Formation (User-Defined) ===");
+        System.out.println("Enter bogies to attach. Type 'done' to finish.");
 
-        while (running) {
-            System.out.println("\n--- Current Consist: " + trainConsist + " ---");
-            System.out.println("1. Add to Front (Engine)");
-            System.out.println("2. Add to End (Guard/Cargo)");
-            System.out.println("3. Insert at Specific Position (e.g., Pantry)");
-            System.out.println("4. Remove First Bogie");
-            System.out.println("5. Remove Last Bogie");
-            System.out.println("6. Exit");
-            System.out.print("Select action: ");
+        while (true) {
+            System.out.print("Enter Bogie Name: ");
+            String bogie = scanner.nextLine();
 
-            int choice = scanner.nextInt();
-            scanner.nextLine(); // Clear buffer
+            if (bogie.equalsIgnoreCase("done")) {
+                break;
+            }
 
-            switch (choice) {
-                case 1:
-                    System.out.print("Enter bogie to add at FRONT: ");
-                    trainConsist.addFirst(scanner.nextLine());
-                    break;
-                case 2:
-                    System.out.print("Enter bogie to add at END: ");
-                    trainConsist.addLast(scanner.nextLine());
-                    break;
-                case 3:
-                    System.out.print("Enter position (Index): ");
-                    int index = scanner.nextInt();
-                    scanner.nextLine();
-                    if (index >= 0 && index <= trainConsist.size()) {
-                        System.out.print("Enter bogie name: ");
-                        trainConsist.add(index, scanner.nextLine());
-                    } else {
-                        System.out.println("Invalid position!");
-                    }
-                    break;
-                case 4:
-                    if (!trainConsist.isEmpty()) {
-                        System.out.println("Detached from front: " + trainConsist.removeFirst());
-                    }
-                    break;
-                case 5:
-                    if (!trainConsist.isEmpty()) {
-                        System.out.println("Detached from rear: " + trainConsist.removeLast());
-                    }
-                    break;
-                case 6:
-                    running = false;
-                    break;
-                default:
-                    System.out.println("Invalid choice.");
+            // add() returns false if the element already exists
+            boolean isAdded = trainFormation.add(bogie);
+
+            if (isAdded) {
+                System.out.println(">> " + bogie + " successfully attached to the formation.");
+            } else {
+                System.out.println(">> Duplicate Alert! " + bogie + " is already in the formation. Entry ignored.");
             }
         }
+
+        // Display the final formation
+        System.out.println("\n--- Final Train Formation (In Order) ---");
+        if (trainFormation.isEmpty()) {
+            System.out.println("The train is empty.");
+        } else {
+            // Because it's a LinkedHashSet, this will print in the exact order entered
+            System.out.println(String.join(" -> ", trainFormation));
+        }
+
+        System.out.println("Total Unique Bogies: " + trainFormation.size());
         scanner.close();
-        System.out.println("Final Train Setup: " + trainConsist);
     }
 }
