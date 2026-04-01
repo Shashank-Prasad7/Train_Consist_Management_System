@@ -1,9 +1,9 @@
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
-// 1. Create a Bogie class (The Blueprint)
+// Reusing the Bogie class from UC7
 class Bogie {
     String name;
     int capacity;
@@ -15,45 +15,53 @@ class Bogie {
 
     @Override
     public String toString() {
-        return String.format("[%s | Capacity: %d]", name, capacity);
+        return String.format("[%s | Cap: %d]", name, capacity);
     }
 }
 
-public class TrainConsistManagementApp{
+public class TrainConsistManagementApp {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        // 2. Create a List<Bogie> to store custom objects
-        List<Bogie> trainConsist = new ArrayList<>();
+        List<Bogie> allBogies = new ArrayList<>();
 
-        System.out.println("=== UC7: Custom Bogie Sorting (User-Defined) ===");
-        System.out.println("Enter bogie details. Type 'done' to finish adding.");
+        System.out.println("=== UC8: Stream API Filtering (User-Defined) ===");
+        System.out.println("Enter bogie details. Type 'done' to finish.");
 
+        // 1. User creates a list of bogies
         while (true) {
-            System.out.print("\nEnter Bogie Name: ");
+            System.out.print("Enter Bogie Name: ");
             String name = scanner.nextLine();
             if (name.equalsIgnoreCase("done")) break;
 
-            System.out.print("Enter Seating Capacity: ");
+            System.out.print("Enter Capacity: ");
             try {
-                int capacity = Integer.parseInt(scanner.nextLine());
-                // 3. Create object and store in List
-                trainConsist.add(new Bogie(name, capacity));
+                int cap = Integer.parseInt(scanner.nextLine());
+                allBogies.add(new Bogie(name, cap));
             } catch (NumberFormatException e) {
-                System.out.println("Invalid capacity. Please enter a number.");
+                System.out.println("Invalid input. Please enter a number.");
             }
         }
 
-        if (trainConsist.isEmpty()) {
-            System.out.println("No bogies to sort.");
+        if (allBogies.isEmpty()) {
+            System.out.println("No bogies to process.");
         } else {
-            System.out.println("\nOriginal Order: " + trainConsist);
+            System.out.print("\nEnter the minimum capacity threshold to filter by: ");
+            int threshold = scanner.nextInt();
 
-            // 4. Use Comparator and sort() method with a Lambda Expression
-            // Sorting by capacity (Ascending)
-            trainConsist.sort(Comparator.comparingInt(b -> b.capacity));
+            // 2. Convert list into a stream
+            // 3. Apply filter() with a Lambda condition
+            // 4. Collect results into a new list
+            List<Bogie> filteredBogies = allBogies.stream()
+                    .filter(b -> b.capacity > threshold) // The condition
+                    .collect(Collectors.toList());      // Terminal operation
 
-            // 5. Display the sorted results
-            System.out.println("Sorted Order (By Capacity): " + trainConsist);
+            // 5. Display filtered results
+            System.out.println("\n--- Filtering Results (Capacity > " + threshold + ") ---");
+            if (filteredBogies.isEmpty()) {
+                System.out.println("No bogies match the criteria.");
+            } else {
+                filteredBogies.forEach(System.out::println);
+            }
         }
 
         scanner.close();
