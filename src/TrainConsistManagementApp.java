@@ -1,55 +1,59 @@
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Scanner;
 
-public class TrainConsistManagementApp {
+// 1. Create a Bogie class (The Blueprint)
+class Bogie {
+    String name;
+    int capacity;
+
+    public Bogie(String name, int capacity) {
+        this.name = name;
+        this.capacity = capacity;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("[%s | Capacity: %d]", name, capacity);
+    }
+}
+
+public class TrainConsistManagementApp{
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        // HashMap<Key: Bogie Name, Value: Capacity>
-        Map<String, Integer> bogieCapacities = new HashMap<>();
+        // 2. Create a List<Bogie> to store custom objects
+        List<Bogie> trainConsist = new ArrayList<>();
 
-        System.out.println("=== UC6: Bogie Capacity Mapping (User-Defined) ===");
-        System.out.println("Enter bogie details. Type 'done' as the name to finish.");
+        System.out.println("=== UC7: Custom Bogie Sorting (User-Defined) ===");
+        System.out.println("Enter bogie details. Type 'done' to finish adding.");
 
         while (true) {
-            System.out.print("\nEnter Bogie Name (e.g., Sleeper): ");
+            System.out.print("\nEnter Bogie Name: ");
             String name = scanner.nextLine();
+            if (name.equalsIgnoreCase("done")) break;
 
-            if (name.equalsIgnoreCase("done")) {
-                break;
-            }
-
-            System.out.print("Enter Seating Capacity for " + name + ": ");
-            // Use try-catch or validation to ensure an integer is entered
+            System.out.print("Enter Seating Capacity: ");
             try {
                 int capacity = Integer.parseInt(scanner.nextLine());
-
-                // .put() inserts or updates the mapping
-                bogieCapacities.put(name, capacity);
-                System.out.println(">> Mapped: " + name + " -> " + capacity + " seats.");
+                // 3. Create object and store in List
+                trainConsist.add(new Bogie(name, capacity));
             } catch (NumberFormatException e) {
-                System.out.println(">> Error: Please enter a valid numeric capacity.");
+                System.out.println("Invalid capacity. Please enter a number.");
             }
         }
 
-        // --- Iterating and Displaying Results ---
-        System.out.println("\n--- Final Bogie Capacity Report ---");
-        if (bogieCapacities.isEmpty()) {
-            System.out.println("No capacity data recorded.");
+        if (trainConsist.isEmpty()) {
+            System.out.println("No bogies to sort.");
         } else {
-            // Using entrySet() to access both Key and Value efficiently
-            for (Map.Entry<String, Integer> entry : bogieCapacities.entrySet()) {
-                System.out.println("Bogie Type: " + entry.getKey() + " | Capacity: " + entry.getValue() + " seats");
-            }
-        }
+            System.out.println("\nOriginal Order: " + trainConsist);
 
-        // --- Fast Lookup Example ---
-        System.out.print("\nQuick Search: Enter a bogie name to check capacity: ");
-        String searchKey = scanner.nextLine();
-        if (bogieCapacities.containsKey(searchKey)) {
-            System.out.println("Result: " + searchKey + " has a capacity of " + bogieCapacities.get(searchKey) + ".");
-        } else {
-            System.out.println("Result: No data found for '" + searchKey + "'.");
+            // 4. Use Comparator and sort() method with a Lambda Expression
+            // Sorting by capacity (Ascending)
+            trainConsist.sort(Comparator.comparingInt(b -> b.capacity));
+
+            // 5. Display the sorted results
+            System.out.println("Sorted Order (By Capacity): " + trainConsist);
         }
 
         scanner.close();
