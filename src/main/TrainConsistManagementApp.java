@@ -1,132 +1,159 @@
 import java.util.*;
-import java.util.function.*;
 import java.util.stream.*;
 
 // ─────────────────────────────────────────────
-//  GoodsBogie Entity
+//  Bogie Entity
 // ─────────────────────────────────────────────
-class GoodsBogie {
+class Bogie {
     private String bogieId;
-    private String bogieType;   // Cylindrical | Open | Box
-    private String cargo;       // Petroleum | Coal | Grain | etc.
+    private String bogieName;
+    private String bogieType;
+    private int    capacity;
 
-    public GoodsBogie(String bogieId, String bogieType, String cargo) {
+    public Bogie(String bogieId, String bogieName, String bogieType, int capacity) {
         this.bogieId   = bogieId;
+        this.bogieName = bogieName;
         this.bogieType = bogieType;
-        this.cargo     = cargo;
+        this.capacity  = capacity;
     }
 
     public String getBogieId()   { return bogieId;   }
+    public String getBogieName() { return bogieName; }
     public String getBogieType() { return bogieType; }
-    public String getCargo()     { return cargo;     }
+    public int    getCapacity()  { return capacity;  }
 
     @Override
     public String toString() {
         return String.format(
-                "GoodsBogie{id='%s', type='%s', cargo='%s'}",
-                bogieId, bogieType, cargo
+                "Bogie{id='%s', name='%s', type='%s', capacity=%d}",
+                bogieId, bogieName, bogieType, capacity
         );
     }
 }
 
 // ─────────────────────────────────────────────
-//  Safety Rules – Functional Interface (Predicate)
-// ─────────────────────────────────────────────
-class BogieRules {
-
-    // Rule : Cylindrical bogie must carry only Petroleum
-    //        All other bogie types are unrestricted
-    public static final Predicate<GoodsBogie> CARGO_SAFETY_RULE =
-            bogie -> {
-                if (bogie.getBogieType().equalsIgnoreCase("Cylindrical")) {
-                    return bogie.getCargo().equalsIgnoreCase("Petroleum");
-                }
-                return true;  // Non-cylindrical bogies pass unconditionally
-            };
-}
-
-// ─────────────────────────────────────────────
-//  Main Class – UC12 : Safety Validation via
-//               Lambda & Functional Interfaces
+//  Main Class – UC13 : Loop vs Stream
+//               Performance Benchmarking
 // ─────────────────────────────────────────────
 public class TrainConsistManagementApp {
 
-    // ── Core validation method ─────────────────────────────────────────────
-    public static boolean isTrainSafe(List<GoodsBogie> bogieList) {
+    private static final int CAPACITY_THRESHOLD = 60;
+
+    // ── Loop-Based Filtering ───────────────────────────────────────────────
+    public static List<Bogie> filterByLoop(List<Bogie> bogieList) {
+        List<Bogie> result = new ArrayList<>();
+        for (Bogie b : bogieList) {
+            if (b.getCapacity() > CAPACITY_THRESHOLD) {
+                result.add(b);
+            }
+        }
+        return result;
+    }
+
+    // ── Stream-Based Filtering ─────────────────────────────────────────────
+    public static List<Bogie> filterByStream(List<Bogie> bogieList) {
         return bogieList.stream()
-                .allMatch(BogieRules.CARGO_SAFETY_RULE);
+                .filter(b -> b.getCapacity() > CAPACITY_THRESHOLD)
+                .collect(Collectors.toList());
+    }
+
+    // ── Benchmark Runner ───────────────────────────────────────────────────
+    public static long benchmarkLoop(List<Bogie> bogieList) {
+        long start  = System.nanoTime();                    // start time
+        filterByLoop(bogieList);
+        long end    = System.nanoTime();                    // end time
+        return end - start;                                 // elapsed ns
+    }
+
+    public static long benchmarkStream(List<Bogie> bogieList) {
+        long start  = System.nanoTime();                    // start time
+        filterByStream(bogieList);
+        long end    = System.nanoTime();                    // end time
+        return end - start;                                 // elapsed ns
     }
 
     // ── main ──────────────────────────────────────────────────────────────
     public static void main(String[] args) {
 
         Scanner sc = new Scanner(System.in);
-        List<GoodsBogie> bogieList = new ArrayList<>();
 
         System.out.println("===========================================");
-        System.out.println("  UC12 : Bogie Safety Validation            ");
-        System.out.println("         via Lambda & Functional Interface   ");
+        System.out.println("  UC13 : Loop vs Stream Performance         ");
+        System.out.println("         Benchmarking with System.nanoTime()");
         System.out.println("===========================================");
-        System.out.println("  Safety Rule:");
-        System.out.println("    Cylindrical bogie -> Petroleum ONLY");
-        System.out.println("    Open / Box bogie  -> Any cargo allowed");
+        System.out.println("  Filter Rule : capacity > " + CAPACITY_THRESHOLD);
         System.out.println("===========================================");
 
         // ── Step 1 : User enters number of bogies ─────────────────────────
-        System.out.print("\nEnter number of goods bogies : ");
+        System.out.print("\nEnter number of bogies : ");
         int n = Integer.parseInt(sc.nextLine().trim());
+
+        List<Bogie> bogieList = new ArrayList<>();
 
         // ── Step 2 : User enters each bogie's details ─────────────────────
         System.out.println("\nEnter bogie details :");
         System.out.println("-------------------------------------------");
 
         for (int i = 1; i <= n; i++) {
-            System.out.println("\n  GoodsBogie #" + i);
+            System.out.println("\n  Bogie #" + i);
 
-            System.out.print("    Bogie ID    : ");
+            System.out.print("    Bogie ID     : ");
             String id = sc.nextLine().trim();
 
-            System.out.print("    Bogie Type  (Cylindrical / Open / Box) : ");
+            System.out.print("    Bogie Name   : ");
+            String name = sc.nextLine().trim();
+
+            System.out.print("    Bogie Type   : ");
             String type = sc.nextLine().trim();
 
-            System.out.print("    Cargo       (Petroleum / Coal / Grain / etc.) : ");
-            String cargo = sc.nextLine().trim();
+            System.out.print("    Capacity     : ");
+            int cap = Integer.parseInt(sc.nextLine().trim());
 
-            bogieList.add(new GoodsBogie(id, type, cargo));
+            bogieList.add(new Bogie(id, name, type, cap));
         }
 
         // ── Step 3 : Display entered bogies ───────────────────────────────
         System.out.println("\n===========================================");
-        System.out.println("[ Goods Bogie List ]");
+        System.out.println("[ Bogie List ]");
         bogieList.forEach(b -> System.out.println("  " + b));
 
-        // ── Step 4 : Apply allMatch() with lambda safety rule ──────────────
-        System.out.println("\n[ Safety Validation ]");
+        // ── Step 4 : Warm-up pass (avoids JIT skewing first run) ──────────
+        filterByLoop(bogieList);
+        filterByStream(bogieList);
+
+        // ── Step 5 : Benchmark loop ────────────────────────────────────────
+        long loopTime         = benchmarkLoop(bogieList);
+        List<Bogie> loopResult = filterByLoop(bogieList);
+
+        // ── Step 6 : Benchmark stream ──────────────────────────────────────
+        long streamTime         = benchmarkStream(bogieList);
+        List<Bogie> streamResult = filterByStream(bogieList);
+
+        // ── Step 7 : Display results ───────────────────────────────────────
+        System.out.println("\n===========================================");
+        System.out.println("[ Filtered Bogies  (capacity > " + CAPACITY_THRESHOLD + ") ]");
         System.out.println("-------------------------------------------");
-
-        bogieList.forEach(b -> {
-            boolean pass = BogieRules.CARGO_SAFETY_RULE.test(b);
-            System.out.printf("  %-10s | %-15s | %-12s | %s%n",
-                    b.getBogieId(),
-                    b.getBogieType(),
-                    b.getCargo(),
-                    pass ? "PASS" : "FAIL  <- Cylindrical must carry Petroleum"
-            );
-        });
-
-        // ── Step 5 : Display overall result ───────────────────────────────
-        boolean trainSafe = isTrainSafe(bogieList);
-
-        System.out.println("-------------------------------------------");
-        if (trainSafe) {
-            System.out.println("  RESULT : Train is SAFETY COMPLIANT.");
-        } else {
-            System.out.println("  RESULT : Train is NOT SAFE.");
-            System.out.println("           Fix cylindrical bogie cargo before dispatch.");
-        }
+        loopResult.forEach(b -> System.out.println("  " + b));
 
         System.out.println("\n===========================================");
-        System.out.println("  Validation complete. Program continues...");
+        System.out.println("[ Performance Benchmark Results ]");
+        System.out.println("-------------------------------------------");
+        System.out.printf("  Loop-Based  Execution Time : %,d ns  (%s ms)%n",
+                loopTime,
+                String.format("%.4f", loopTime / 1_000_000.0));
+        System.out.printf("  Stream-Based Execution Time : %,d ns  (%s ms)%n",
+                streamTime,
+                String.format("%.4f", streamTime / 1_000_000.0));
+        System.out.println("-------------------------------------------");
+        System.out.printf("  Filtered Count : %d bogie(s) (both methods agree: %b)%n",
+                loopResult.size(),
+                loopResult.size() == streamResult.size());
+
+        String faster = loopTime <= streamTime ? "Loop-Based" : "Stream-Based";
+        System.out.println("  Faster Method : " + faster);
+
+        System.out.println("\n===========================================");
+        System.out.println("  Benchmark complete. Program continues...");
         System.out.println("===========================================");
 
         sc.close();
