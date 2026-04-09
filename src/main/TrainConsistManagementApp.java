@@ -1,86 +1,92 @@
 import java.util.*;
-import java.util.stream.*;
+import java.util.regex.*;
 
-// ─────────────────────────────────────────────
-//  Bogie Entity
-// ─────────────────────────────────────────────
-class Bogie {
-    private String bogieId;
-    private String bogieName;
-    private String bogieType;
-    private int    capacity;
-
-    public Bogie(String bogieId, String bogieName, String bogieType, int capacity) {
-        this.bogieId   = bogieId;
-        this.bogieName = bogieName;
-        this.bogieType = bogieType;
-        this.capacity  = capacity;
-    }
-
-    public String getBogieId()   { return bogieId;   }
-    public String getBogieName() { return bogieName; }
-    public String getBogieType() { return bogieType; }
-    public int    getCapacity()  { return capacity;  }
-
-    @Override
-    public String toString() {
-        return String.format("Bogie{id='%s', name='%s', type='%s', capacity=%d}",
-                bogieId, bogieName, bogieType, capacity);
-    }
-}
-
-// ─────────────────────────────────────────────
-//  Main Class – UC10 : Aggregate Seating
-//              Capacities Using Stream Reduce
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+//  Main Class – UC11 : Validate Train ID and Cargo Code using Regex
+// ─────────────────────────────────────────────────────────────────────────────
 public class TrainConsistManagementApp {
 
+    // ── Regex Patterns ────────────────────────────────────────────────────────
+    //  Train ID   : TRN- followed by exactly 4 digits       e.g. TRN-1234
+    //  Cargo Code : 3 uppercase letters - 2 uppercase letters  e.g. PET-AB
+    static final String TRAIN_ID_REGEX   = "TRN-\\d{4}";
+    static final String CARGO_CODE_REGEX = "[A-Z]{3}-[A-Z]{2}";
+
+    // ── Validation Helpers ────────────────────────────────────────────────────
+    public static boolean isValidTrainId(String input) {
+        Pattern pattern = Pattern.compile(TRAIN_ID_REGEX);
+        Matcher matcher = pattern.matcher(input);
+        return matcher.matches();
+    }
+
+    public static boolean isValidCargoCode(String input) {
+        Pattern pattern = Pattern.compile(CARGO_CODE_REGEX);
+        Matcher matcher = pattern.matcher(input);
+        return matcher.matches();
+    }
+
+    // ── Display Helper ────────────────────────────────────────────────────────
+    private static void printResult(String label, String input, boolean valid) {
+        String status = valid ? "VALID" : "INVALID";
+        System.out.printf("  %-14s : %-20s ->  %s%n", label, input, status);
+    }
+
+    // ── main ──────────────────────────────────────────────────────────────────
     public static void main(String[] args) {
 
         Scanner sc = new Scanner(System.in);
-        List<Bogie> bogieList = new ArrayList<>();
 
-        // ── Step 1 : User enters the number of bogies ──────────────────────
-        System.out.print("\nEnter number of bogies to add : ");
-        int n = Integer.parseInt(sc.nextLine().trim());
+        System.out.println("===========================================");
+        System.out.println("  UC11 : Train ID & Cargo Code Validation  ");
+        System.out.println("         via Regular Expressions            ");
+        System.out.println("===========================================");
+        System.out.println("  Format Rules:");
+        System.out.println("    Train ID   -> TRN-XXXX  (exactly 4 digits)");
+        System.out.println("    Cargo Code -> AAA-BB    (uppercase letters only)");
+        System.out.println("===========================================");
 
-        // ── Step 2 : User enters each bogie's details ──────────────────────
-        System.out.println("\nEnter bogie details (Id | Name | Type | Capacity) :");
-        System.out.println("------------------------------------------------------");
+        boolean continueValidation = true;
 
-        for (int i = 1; i <= n; i++) {
-            System.out.println("\n  Bogie #" + i);
+        while (continueValidation) {
 
-            System.out.print("    Bogie ID       : ");
-            String id = sc.nextLine().trim();
+            // ── Step 1 : User enters Train ID ─────────────────────────────
+            System.out.print("\nEnter Train ID    (e.g. TRN-1234) : ");
+            String trainId = sc.nextLine().trim();
 
-            System.out.print("    Bogie Name     : ");
-            String name = sc.nextLine().trim();
+            // ── Step 2 : Compile Pattern and run Matcher ───────────────────
+            boolean trainValid = isValidTrainId(trainId);
 
-            System.out.print("    Bogie Type     : ");
-            String type = sc.nextLine().trim();
+            // ── Step 3 : User enters Cargo Code ───────────────────────────
+            System.out.print("Enter Cargo Code  (e.g. PET-AB)   : ");
+            String cargoCode = sc.nextLine().trim();
 
-            System.out.print("    Bogie Capacity : ");
-            int capacity = Integer.parseInt(sc.nextLine().trim());
+            // ── Step 4 : Compile Pattern and run Matcher ───────────────────
+            boolean cargoValid = isValidCargoCode(cargoCode);
 
-            bogieList.add(new Bogie(id, name, type, capacity));
+            // ── Step 5 : Display validation results ───────────────────────
+            System.out.println("\n-------------------------------------------");
+            System.out.println("[ Validation Results ]");
+            printResult("Train ID",   trainId,   trainValid);
+            printResult("Cargo Code", cargoCode, cargoValid);
+            System.out.println("-------------------------------------------");
+
+            if (trainValid && cargoValid) {
+                System.out.println("  Both inputs accepted. Processing...");
+            } else {
+                if (!trainValid)
+                    System.out.println("  ERROR : Train ID must match format  -> TRN-XXXX (4 digits)");
+                if (!cargoValid)
+                    System.out.println("  ERROR : Cargo Code must match format -> AAA-BB (uppercase only)");
+            }
+
+            // ── Step 6 : Continue or exit ──────────────────────────────────
+            System.out.print("\nValidate another entry? (yes/no) : ");
+            String choice = sc.nextLine().trim().toLowerCase();
+            continueValidation = choice.equals("yes") || choice.equals("y");
         }
 
-        // ── Step 3 : Display the flat list entered by user ─────────────────
         System.out.println("\n===========================================");
-        System.out.println("[ Bogies Entered ]");
-        bogieList.forEach(b -> System.out.println("  " + b));
-
-        // ── Step 4 : Convert list → Stream → map() → reduce() ─────────────
-        int totalCapacity = bogieList.stream()
-                .map(b -> b.getCapacity())
-                .reduce(0, Integer::sum);
-
-        // ── Step 5 : Display total seating capacity ────────────────────────
-        System.out.println("\n===========================================");
-        System.out.println("[ Total Seating Capacity ]");
-        System.out.println("-------------------------------------------");
-        System.out.println("  Total Seats : " + totalCapacity);
+        System.out.println("  Validation complete. Program continues...");
         System.out.println("===========================================");
 
         sc.close();
