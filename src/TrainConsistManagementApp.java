@@ -1,69 +1,107 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.*;
 
-// Reusing the Bogie class from UC7
+// ─────────────────────────────────────────────
+//  Bogie Entity
+// ─────────────────────────────────────────────
 class Bogie {
-    String name;
-    int capacity;
+    private String bogieId;
+    private String bogieName;
+    private String bogieType;
 
-    public Bogie(String name, int capacity) {
-        this.name = name;
-        this.capacity = capacity;
+    public Bogie(String bogieId, String bogieName, String bogieType) {
+        this.bogieId   = bogieId;
+        this.bogieName = bogieName;
+        this.bogieType = bogieType;
     }
+
+    public String getBogieId()   { return bogieId;   }
+    public String getBogieName() { return bogieName; }
+    public String getBogieType() { return bogieType; }
 
     @Override
     public String toString() {
-        return String.format("[%s | Cap: %d]", name, capacity);
+        return String.format("Bogie{id='%s', name='%s', type='%s'}",
+                bogieId, bogieName, bogieType);
     }
 }
 
+// ─────────────────────────────────────────────
+//  Main Class – UC9 : Group Bogies by Category
+//              (User-Defined Input)
+// ─────────────────────────────────────────────
 public class TrainConsistManagementApp {
+
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        List<Bogie> allBogies = new ArrayList<>();
 
-        System.out.println("=== UC8: Stream API Filtering (User-Defined) ===");
-        System.out.println("Enter bogie details. Type 'done' to finish.");
+        Scanner sc = new Scanner(System.in);
+        List<Bogie> bogieList = new ArrayList<>();
 
-        // 1. User creates a list of bogies
-        while (true) {
-            System.out.print("Enter Bogie Name: ");
-            String name = scanner.nextLine();
-            if (name.equalsIgnoreCase("done")) break;
 
-            System.out.print("Enter Capacity: ");
-            try {
-                int cap = Integer.parseInt(scanner.nextLine());
-                allBogies.add(new Bogie(name, cap));
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a number.");
-            }
+        // ── Step 1 : User enters the number of bogies ──────────────────────
+        System.out.print("\nEnter number of bogies to add : ");
+        int n = Integer.parseInt(sc.nextLine().trim());
+
+        // ── Step 2 : User enters each bogie's details ──────────────────────
+        System.out.println("\nEnter bogie details (Id | Name | Type) :");
+        System.out.println("-------------------------------------------");
+
+        for (int i = 1; i <= n; i++) {
+            System.out.println("\n  Bogie #" + i);
+
+            System.out.print("    Bogie ID   : ");
+            String id = sc.nextLine().trim();
+
+            System.out.print("    Bogie Name : ");
+            String name = sc.nextLine().trim();
+
+            System.out.print("    Bogie Type : ");
+            String type = sc.nextLine().trim();
+
+            bogieList.add(new Bogie(id, name, type));
         }
 
-        if (allBogies.isEmpty()) {
-            System.out.println("No bogies to process.");
-        } else {
-            System.out.print("\nEnter the minimum capacity threshold to filter by: ");
-            int threshold = scanner.nextInt();
+        // ── Step 3 : Display the flat list entered by user ─────────────────
+        System.out.println("\n===========================================");
+        System.out.println("[ Bogies Entered ]");
+        bogieList.forEach(b -> System.out.println("  " + b));
 
-            // 2. Convert list into a stream
-            // 3. Apply filter() with a Lambda condition
-            // 4. Collect results into a new list
-            List<Bogie> filteredBogies = allBogies.stream()
-                    .filter(b -> b.capacity > threshold) // The condition
-                    .collect(Collectors.toList());      // Terminal operation
+        // ── Step 4 : Convert list → Stream → groupingBy collector ──────────
+        Map<String, List<Bogie>> groupedBogies =
+                bogieList.stream()
+                        .collect(
+                                Collectors.groupingBy(Bogie::getBogieType)
+                        );
 
-            // 5. Display filtered results
-            System.out.println("\n--- Filtering Results (Capacity > " + threshold + ") ---");
-            if (filteredBogies.isEmpty()) {
-                System.out.println("No bogies match the criteria.");
-            } else {
-                filteredBogies.forEach(System.out::println);
-            }
-        }
+        // ── Step 5 : Display grouped result ────────────────────────────────
+        System.out.println("\n===========================================");
+        System.out.println("[ Bogies Grouped by Type ]");
+        System.out.println("-------------------------------------------");
 
-        scanner.close();
+        groupedBogies.forEach((type, bogies) -> {
+            System.out.println("\n  Category : " + type
+                    + "  (count = " + bogies.size() + ")");
+            bogies.forEach(b -> System.out.println("    -> " + b));
+        });
+
+        // ── Step 6 : Count summary per group ───────────────────────────────
+        System.out.println("\n-------------------------------------------");
+        System.out.println("[ Group Count Summary ]");
+
+        Map<String, Long> countByType =
+                bogieList.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        Bogie::getBogieType,
+                                        Collectors.counting()
+                                )
+                        );
+
+        countByType.forEach((type, count) ->
+                System.out.printf("  %-20s : %d bogie(s)%n", type, count));
+
+
+
+        sc.close();
     }
 }
