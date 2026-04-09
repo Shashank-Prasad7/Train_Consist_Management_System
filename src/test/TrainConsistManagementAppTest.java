@@ -2,129 +2,78 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.*;
-import java.util.stream.*;
-
 // ─────────────────────────────────────────────────────────────────────────────
-//  Test Class – UC13 : Loop vs Stream Performance Benchmarking
+//  Test Class – UC14 : Custom Exception for Invalid Passenger Bogie Capacity
 // ─────────────────────────────────────────────────────────────────────────────
 public class TrainConsistManagementAppTest {
 
-    // ── Shared threshold ──────────────────────────────────────────────────────
-    private static final int THRESHOLD = 60;
-
-    // ── Shared test dataset ───────────────────────────────────────────────────
-    private List<Bogie> getSampleBogies() {
-        return Arrays.asList(
-                new Bogie("B001", "Sleeper Coach",  "Passenger", 72),   // > 60 → included
-                new Bogie("B002", "Local Coach",    "Passenger", 50),   // ≤ 60 → excluded
-                new Bogie("B003", "AC Coach",       "Passenger", 64),   // > 60 → included
-                new Bogie("B004", "General Coach",  "Passenger", 60),   // ≤ 60 → excluded
-                new Bogie("B005", "Express Coach",  "Passenger", 90)    // > 60 → included
-        );
-    }
-
     // ── TC01 ──────────────────────────────────────────────────────────────────
     @Test
-    @DisplayName("TC01 - Loop filtering correctly returns bogies with capacity > 60")
-    void testLoopFilteringLogic() {
-        List<Bogie> bogieList  = getSampleBogies();
-        List<Bogie> result     = TrainConsistManagementApp.filterByLoop(bogieList);
-
-        // Only B001 (72), B003 (64), B005 (90) qualify
-        assertEquals(3, result.size());
-
-        // Confirm all returned bogies actually satisfy the rule
-        result.forEach(b ->
-                assertTrue(b.getCapacity() > THRESHOLD,
-                        "Bogie " + b.getBogieId() + " should have capacity > " + THRESHOLD)
-        );
-
-        // Confirm excluded bogies are not present
-        List<String> ids = result.stream()
-                .map(Bogie::getBogieId)
-                .collect(Collectors.toList());
-        assertFalse(ids.contains("B002"));   // capacity 50 → must be excluded
-        assertFalse(ids.contains("B004"));   // capacity 60 → must be excluded
+    @DisplayName("TC01 - Valid capacity bogie is created successfully without exception")
+    void testException_ValidCapacityCreation() {
+        assertDoesNotThrow(() -> {
+            PassengerBogie bogie = new PassengerBogie("P001", "Sleeper", 72);
+            assertNotNull(bogie);
+        });
     }
 
     // ── TC02 ──────────────────────────────────────────────────────────────────
     @Test
-    @DisplayName("TC02 - Stream filtering correctly returns bogies with capacity > 60")
-    void testStreamFilteringLogic() {
-        List<Bogie> bogieList = getSampleBogies();
-        List<Bogie> result    = TrainConsistManagementApp.filterByStream(bogieList);
-
-        assertEquals(3, result.size());
-
-        result.forEach(b ->
-                assertTrue(b.getCapacity() > THRESHOLD,
-                        "Bogie " + b.getBogieId() + " should have capacity > " + THRESHOLD)
-        );
-
-        List<String> ids = result.stream()
-                .map(Bogie::getBogieId)
-                .collect(Collectors.toList());
-        assertFalse(ids.contains("B002"));
-        assertFalse(ids.contains("B004"));
+    @DisplayName("TC02 - Negative capacity throws InvalidCapacityException")
+    void testException_NegativeCapacityThrowsException() {
+        assertThrows(InvalidCapacityException.class, () -> {
+            new PassengerBogie("P002", "AC Coach", -10);
+        });
     }
 
     // ── TC03 ──────────────────────────────────────────────────────────────────
     @Test
-    @DisplayName("TC03 - Loop and Stream produce identical results for the same dataset")
-    void testLoopAndStreamResultsMatch() {
-        List<Bogie> bogieList    = getSampleBogies();
-        List<Bogie> loopResult   = TrainConsistManagementApp.filterByLoop(bogieList);
-        List<Bogie> streamResult = TrainConsistManagementApp.filterByStream(bogieList);
-
-        // Same count
-        assertEquals(loopResult.size(), streamResult.size());
-
-        // Same bogie IDs in both results
-        List<String> loopIds   = loopResult.stream()
-                .map(Bogie::getBogieId)
-                .sorted()
-                .collect(Collectors.toList());
-        List<String> streamIds = streamResult.stream()
-                .map(Bogie::getBogieId)
-                .sorted()
-                .collect(Collectors.toList());
-        assertEquals(loopIds, streamIds);
+    @DisplayName("TC03 - Zero capacity throws InvalidCapacityException")
+    void testException_ZeroCapacityThrowsException() {
+        assertThrows(InvalidCapacityException.class, () -> {
+            new PassengerBogie("P003", "General", 0);
+        });
     }
 
     // ── TC04 ──────────────────────────────────────────────────────────────────
     @Test
-    @DisplayName("TC04 - System.nanoTime() produces a positive elapsed time")
-    void testExecutionTimeMeasurement() {
-        List<Bogie> bogieList = getSampleBogies();
-
-        long loopTime   = TrainConsistManagementApp.benchmarkLoop(bogieList);
-        long streamTime = TrainConsistManagementApp.benchmarkStream(bogieList);
-
-        // Elapsed time must always be > 0
-        assertTrue(loopTime   > 0, "Loop execution time must be positive");
-        assertTrue(streamTime > 0, "Stream execution time must be positive");
+    @DisplayName("TC04 - Exception message equals 'Capacity must be greater than zero'")
+    void testException_ExceptionMessageValidation() {
+        InvalidCapacityException ex = assertThrows(
+                InvalidCapacityException.class, () -> {
+                    new PassengerBogie("P004", "Sleeper", -5);
+                }
+        );
+        assertEquals("Capacity must be greater than zero", ex.getMessage());
     }
 
     // ── TC05 ──────────────────────────────────────────────────────────────────
     @Test
-    @DisplayName("TC05 - Large dataset is filtered correctly by both methods")
-    void testLargeDatasetProcessing() {
-        // Generate 10,000 bogies with alternating capacities 55 and 75
-        List<Bogie> largeList = new ArrayList<>();
-        for (int i = 1; i <= 10_000; i++) {
-            int cap = (i % 2 == 0) ? 75 : 55;   // 5000 above 60, 5000 below
-            largeList.add(new Bogie("B" + i, "Coach" + i, "Passenger", cap));
-        }
+    @DisplayName("TC05 - Valid bogie stores correct type and capacity after creation")
+    void testException_ObjectIntegrityAfterCreation() throws InvalidCapacityException {
+        PassengerBogie bogie = new PassengerBogie("P005", "AC Coach", 64);
 
-        List<Bogie> loopResult   = TrainConsistManagementApp.filterByLoop(largeList);
-        List<Bogie> streamResult = TrainConsistManagementApp.filterByStream(largeList);
+        assertEquals("P005",     bogie.getBogieId());
+        assertEquals("AC Coach", bogie.getBogieType());
+        assertEquals(64,         bogie.getCapacity());
+    }
 
-        // Exactly 5000 bogies have capacity 75 (> 60)
-        assertEquals(5000, loopResult.size());
-        assertEquals(5000, streamResult.size());
+    // ── TC06 ──────────────────────────────────────────────────────────────────
+    @Test
+    @DisplayName("TC06 - Multiple valid bogies can be created without exception")
+    void testException_MultipleValidBogiesCreation() {
+        assertDoesNotThrow(() -> {
+            PassengerBogie b1 = new PassengerBogie("P006", "Sleeper",  72);
+            PassengerBogie b2 = new PassengerBogie("P007", "AC Coach", 64);
+            PassengerBogie b3 = new PassengerBogie("P008", "General",  90);
 
-        // Both methods agree
-        assertEquals(loopResult.size(), streamResult.size());
+            assertNotNull(b1);
+            assertNotNull(b2);
+            assertNotNull(b3);
+
+            assertEquals(72, b1.getCapacity());
+            assertEquals(64, b2.getCapacity());
+            assertEquals(90, b3.getCapacity());
+        });
     }
 }
