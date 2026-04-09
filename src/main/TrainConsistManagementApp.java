@@ -1,116 +1,138 @@
 import java.util.*;
 
 // ─────────────────────────────────────────────
-//  Custom Exception – UC14
+//  Custom Runtime Exception – UC15
 // ─────────────────────────────────────────────
-class InvalidCapacityException extends Exception {
+class CargoSafetyException extends RuntimeException {
 
-    public InvalidCapacityException(String message) {
+    public CargoSafetyException(String message) {
         super(message);
     }
 }
 
 // ─────────────────────────────────────────────
-//  PassengerBogie Entity
+//  GoodsBogie Entity
 // ─────────────────────────────────────────────
-class PassengerBogie {
+class GoodsBogie {
     private String bogieId;
-    private String bogieType;
-    private int    capacity;
+    private String shape;        // Cylindrical | Rectangular
+    private String cargo;        // assigned cargo — null if not yet assigned
 
-    // Constructor throws custom exception if capacity is invalid
-    public PassengerBogie(String bogieId, String bogieType, int capacity)
-            throws InvalidCapacityException {
-
-        if (capacity <= 0) {
-            throw new InvalidCapacityException(
-                    "Capacity must be greater than zero"
-            );
-        }
-
-        this.bogieId   = bogieId;
-        this.bogieType = bogieType;
-        this.capacity  = capacity;
+    public GoodsBogie(String bogieId, String shape) {
+        this.bogieId = bogieId;
+        this.shape   = shape;
+        this.cargo   = null;
     }
 
-    public String getBogieId()   { return bogieId;   }
-    public String getBogieType() { return bogieType; }
-    public int    getCapacity()  { return capacity;  }
+    public String getBogieId() { return bogieId; }
+    public String getShape()   { return shape;   }
+    public String getCargo()   { return cargo;   }
+
+    // ── Core assignment method with try-catch-finally ──────────────────────
+    public void assignCargo(String cargoType) {
+        System.out.println("\n  [ASSIGN] Bogie: " + bogieId
+                + " | Shape: " + shape
+                + " | Cargo: " + cargoType);
+        try {
+            // ── Business Rule : Petroleum must NOT go into Rectangular bogie
+            if (shape.equalsIgnoreCase("Rectangular")
+                    && cargoType.equalsIgnoreCase("Petroleum")) {
+                throw new CargoSafetyException(
+                        "Unsafe assignment: Petroleum cannot be loaded into a "
+                                + "Rectangular bogie [" + bogieId + "]"
+                );
+            }
+
+            // Safe — assign cargo
+            this.cargo = cargoType;
+            System.out.println("  [SUCCESS] Cargo '" + cargoType
+                    + "' assigned to bogie " + bogieId + ".");
+
+        } catch (CargoSafetyException e) {
+            // Unsafe assignment caught — cargo remains null
+            System.out.println("  [ERROR]   " + e.getMessage());
+
+        } finally {
+            // Executes always — safe or unsafe path
+            System.out.println("  [LOG]     Cargo assignment validation complete "
+                    + "for bogie " + bogieId + ".");
+        }
+    }
 
     @Override
     public String toString() {
+        String assignedCargo = (cargo != null) ? cargo : "NOT ASSIGNED";
         return String.format(
-                "PassengerBogie{id='%s', type='%s', capacity=%d}",
-                bogieId, bogieType, capacity
+                "GoodsBogie{id='%s', shape='%s', cargo='%s'}",
+                bogieId, shape, assignedCargo
         );
     }
 }
 
 // ─────────────────────────────────────────────
-//  Main Class – UC14 : Custom Exception for
-//               Invalid Passenger Bogie Capacity
+//  Main Class – UC15 : Safe Cargo Assignment
+//               via try-catch-finally
 // ─────────────────────────────────────────────
 public class TrainConsistManagementApp {
 
     public static void main(String[] args) {
 
         Scanner sc = new Scanner(System.in);
-        List<PassengerBogie> trainConsist = new ArrayList<>();
+        List<GoodsBogie> bogieList = new ArrayList<>();
 
         System.out.println("===========================================");
-        System.out.println("  UC14 : Passenger Bogie Capacity           ");
-        System.out.println("         Validation via Custom Exception     ");
+        System.out.println("  UC15 : Safe Cargo Assignment              ");
+        System.out.println("         via try-catch-finally              ");
         System.out.println("===========================================");
-        System.out.println("  Rule : Capacity must be > 0");
+        System.out.println("  Safety Rule:");
+        System.out.println("    Petroleum -> Cylindrical only");
+        System.out.println("    Rectangular bogies -> any cargo EXCEPT Petroleum");
         System.out.println("===========================================");
 
-        // ── Step 1 : User enters number of bogies to add ──────────────────
-        System.out.print("\nHow many bogies do you want to add? : ");
+        // ── Step 1 : User enters number of bogies ─────────────────────────
+        System.out.print("\nEnter number of goods bogies : ");
         int n = Integer.parseInt(sc.nextLine().trim());
 
-        // ── Step 2 : User enters each bogie's details ─────────────────────
-        System.out.println("\nEnter bogie details :");
+        // ── Step 2 : User creates each bogie ──────────────────────────────
+        System.out.println("\nCreate bogies :");
         System.out.println("-------------------------------------------");
 
         for (int i = 1; i <= n; i++) {
             System.out.println("\n  Bogie #" + i);
 
-            System.out.print("    Bogie ID   : ");
+            System.out.print("    Bogie ID : ");
             String id = sc.nextLine().trim();
 
-            System.out.print("    Bogie Type : ");
-            String type = sc.nextLine().trim();
+            System.out.print("    Shape    (Cylindrical / Rectangular) : ");
+            String shape = sc.nextLine().trim();
 
-            System.out.print("    Capacity   : ");
-            int cap = Integer.parseInt(sc.nextLine().trim());
-
-            // ── Step 3 : Validate capacity — throw if invalid ──────────────
-            try {
-                PassengerBogie bogie = new PassengerBogie(id, type, cap);
-                trainConsist.add(bogie);
-                System.out.println("    SUCCESS : Bogie added -> " + bogie);
-
-            } catch (InvalidCapacityException e) {
-                // ── Step 4 : Exception caught — display error, skip bogie ──
-                System.out.println("    ERROR   : " + e.getMessage()
-                        + " (entered: " + cap + ") — Bogie NOT added.");
-            }
+            bogieList.add(new GoodsBogie(id, shape));
         }
 
-        // ── Step 5 : Display final train consist ──────────────────────────
+        // ── Step 3 : User assigns cargo to each bogie ─────────────────────
         System.out.println("\n===========================================");
-        System.out.println("[ Final Train Consist ]");
+        System.out.println("Assign cargo to each bogie :");
         System.out.println("-------------------------------------------");
 
-        if (trainConsist.isEmpty()) {
-            System.out.println("  No valid bogies were added.");
-        } else {
-            trainConsist.forEach(b -> System.out.println("  " + b));
-            System.out.println("\n  Total valid bogies : " + trainConsist.size());
+        for (GoodsBogie bogie : bogieList) {
+            System.out.print("\n  Cargo for bogie " + bogie.getBogieId()
+                    + " [" + bogie.getShape() + "]"
+                    + " (Petroleum / Coal / Grain / etc.) : ");
+            String cargo = sc.nextLine().trim();
+
+            // ── Step 4 : assignCargo() internally uses try-catch-finally ───
+            bogie.assignCargo(cargo);
         }
 
+        // ── Step 5 : Display final state of all bogies ────────────────────
         System.out.println("\n===========================================");
-        System.out.println("  Validation complete. Program continues...");
+        System.out.println("[ Final Goods Bogie State ]");
+        System.out.println("-------------------------------------------");
+        bogieList.forEach(b -> System.out.println("  " + b));
+
+        System.out.println("\n===========================================");
+        System.out.println("  Program continues safely after all        ");
+        System.out.println("  cargo assignments (valid and invalid).    ");
         System.out.println("===========================================");
 
         sc.close();
